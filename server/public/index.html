@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life RPG API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; }
+        button, input { margin: 5px 0; padding: 5px 10px; }
+        #result { margin-top: 20px; padding: 10px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <h1>Life RPG API Test</h1>
+
+    <h2>Register</h2>
+    <input id="regUsername" placeholder="Username">
+    <input id="regEmail" placeholder="Email">
+    <input id="regPassword" type="password" placeholder="Password">
+    <button onclick="register()">Register</button>
+
+    <h2>Login</h2>
+    <input id="loginEmail" placeholder="Email">
+    <input id="loginPassword" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+
+    <h2>API Tests</h2>
+    <button onclick="getQuests()">Get All Quests</button>
+    <button onclick="getUserProfile()">Get User Profile</button>
+    <button onclick="getTasks()">Get All Tasks</button>
+    <button onclick="logout()">Logout</button>
+
+    <div id="result"></div>
+
+    <script>
+        async function fetchAPI(endpoint, method = 'GET', body = null) {
+            const token = localStorage.getItem('token');
+            console.log('Using token:', token);  // Log the token being used
+            try {
+                const response = await fetch(`http://localhost:5000/api/${endpoint}`, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    },
+                    body: body ? JSON.stringify(body) : null
+                });
+                const data = await response.json();
+                console.log('API response:', data);  // Log the API response
+                document.getElementById('result').innerText = JSON.stringify(data, null, 2);
+                return data;
+            } catch (error) {
+                console.error('API error:', error);  // Log any API errors
+                document.getElementById('result').innerText = JSON.stringify({ error: error.message }, null, 2);
+            }
+        }
+
+        async function register() {
+            const username = document.getElementById('regUsername').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            await fetchAPI('auth/register', 'POST', { username, email, password });
+        }
+
+        async function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const data = await fetchAPI('auth/login', 'POST', { email, password });
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+                console.log('Token stored:', data.token);  // Log the stored token
+                document.getElementById('result').innerText = 'Login successful. Token stored.';
+            } else {
+                console.error('Login failed:', data);  // Log failed login attempts
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            document.getElementById('result').innerText = 'Logged out. Token removed.';
+        }
+
+        function getQuests() {
+            fetchAPI('quest');
+        }
+
+        function getUserProfile() {
+            fetchAPI('user/profile');
+        }
+
+        function getTasks() {
+            fetchAPI('task');
+        }
+    </script>
+</body>
+</html>
