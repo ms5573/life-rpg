@@ -4,8 +4,8 @@ const bcrypt = require('bcryptjs');
 const { users, generateId } = require('../inMemoryStore');
 const User = require('../models/User');
 
-// In a real app, use an environment variable
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+// Use environment variable for the JWT secret
+const JWT_SECRET = process.env.JWT_SECRET || 'dK3j9Uf#P2x$mN7qR8t@Lw5zA1bC4vF6yH';
 
 exports.register = async (req, res) => {
   try {
@@ -30,7 +30,7 @@ exports.register = async (req, res) => {
 
     // Generate JWT
     const token = jwt.sign(
-      { userId: newUser.id, email: newUser.email },
+      { userId: newUser.id, email: newUser.email },  // Ensure consistency in token payload
       JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -54,37 +54,16 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    // Validate input
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
-    }
-
-    // Find user
     const user = users.find(u => u.email === email);
-
-    // Check if user exists and password is correct
+    
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
-
-    // Generate JWT
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
-    // Send response
-    res.json({
-      message: 'Login successful',
-      token,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email
-      }
-    });
+    
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });  // Ensure token has userId
+    console.log('Generated token:', token);  // Log the generated token
+    
+    res.json({ token, message: 'Login successful' });  // Ensure token is in the response
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Error in user login' });
@@ -93,8 +72,7 @@ exports.login = async (req, res) => {
 
 exports.getProfile = (req, res) => {
   try {
-    // The user ID should be available from the auth middleware
-    const userId = req.userId;
+    const userId = req.user.userId;  // Correctly access userId from the decoded token
     const user = users.find(u => u.id === userId);
 
     if (!user) {
@@ -111,4 +89,4 @@ exports.getProfile = (req, res) => {
     console.error('Get profile error:', error);
     res.status(500).json({ message: 'Error fetching user profile' });
   }
-};
+}; 

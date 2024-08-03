@@ -35,7 +35,7 @@
     <script>
         async function fetchAPI(endpoint, method = 'GET', body = null) {
             const token = localStorage.getItem('token');
-            console.log('Using token:', token);  // Log the token being used
+            console.log('Token used in request:', token);  // Log the token being used
             try {
                 const response = await fetch(`http://localhost:5000/api/${endpoint}`, {
                     method,
@@ -46,11 +46,11 @@
                     body: body ? JSON.stringify(body) : null
                 });
                 const data = await response.json();
-                console.log('API response:', data);  // Log the API response
+                console.log('API response:', data);
                 document.getElementById('result').innerText = JSON.stringify(data, null, 2);
                 return data;
             } catch (error) {
-                console.error('API error:', error);  // Log any API errors
+                console.error('API error:', error);
                 document.getElementById('result').innerText = JSON.stringify({ error: error.message }, null, 2);
             }
         }
@@ -66,18 +66,15 @@
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
             const data = await fetchAPI('auth/login', 'POST', { email, password });
+            console.log('Login response:', data);  // Log the entire login response
             if (data.token) {
                 localStorage.setItem('token', data.token);
-                console.log('Token stored:', data.token);  // Log the stored token
+                console.log('Token stored in localStorage:', localStorage.getItem('token'));
                 document.getElementById('result').innerText = 'Login successful. Token stored.';
             } else {
-                console.error('Login failed:', data);  // Log failed login attempts
+                console.error('Login failed:', data);
+                document.getElementById('result').innerText = 'Login failed: ' + JSON.stringify(data);
             }
-        }
-
-        function logout() {
-            localStorage.removeItem('token');
-            document.getElementById('result').innerText = 'Logged out. Token removed.';
         }
 
         function getQuests() {
