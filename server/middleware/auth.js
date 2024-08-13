@@ -1,22 +1,23 @@
-const jwt = require('jsonwebtoken');
+// server/middleware/auth.js
+const admin = require('firebase-admin');
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   console.log('Auth middleware called');
   const authHeader = req.header('Authorization');
   console.log('Auth header:', authHeader);
 
-  const token = authHeader?.replace('Bearer ', '');
-  console.log('Extracted token:', token);
-
-  if (!token) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     console.log('No token provided');
     return res.status(401).json({ message: 'No token, authorization denied' });
   }
 
+  const idToken = authHeader.split('Bearer ')[1];
+  console.log('Extracted token:', idToken);
+
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Decoded token:', decoded);
-    req.user = decoded.userId;
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    console.log('Decoded token:', decodedToken);
+    req.user = decodedToken.uid;
     next();
   } catch (err) {
     console.error('Token verification failed:', err);
